@@ -1,0 +1,502 @@
+---
+title: "Data Cleaning and EDA"
+author: "Umi Yamaguchi, Benjamin Rodovinski"
+output: pdf_document
+---
+
+```{r}
+# Load the dataset
+data <- read.csv("data_academic_performance.csv", header=T)
+
+head(data)
+str(data)
+summary(data)
+
+```
+
+```{r}
+data$GENDER <- as.factor(data$GENDER)
+levels(data$GENDER) <- c(0, 1)  #0 for Male and 1 for Female
+
+```
+
+```{r}
+library(dplyr)
+
+data <- data %>%
+  mutate(EDU_MOTHER = ifelse(EDU_MOTHER == "Ninguno", "Not sure", EDU_MOTHER),
+         EDU_FATHER = ifelse(EDU_FATHER == "Ninguno", "Not sure", EDU_FATHER))
+
+
+data$EDU_FATHER <- as.factor(data$EDU_FATHER)
+data$EDU_MOTHER <- as.factor(data$EDU_MOTHER)
+data$OCC_FATHER <- as.factor(data$OCC_FATHER)
+data$OCC_MOTHER <- as.factor(data$OCC_MOTHER)
+
+
+
+
+data$PEOPLE_HOUSE <- case_when(
+  data$PEOPLE_HOUSE == "One" ~ 1,
+  data$PEOPLE_HOUSE == "Two" ~ 2,
+  data$PEOPLE_HOUSE == "Three" ~ 3,
+  data$PEOPLE_HOUSE == "Four" ~ 4,
+  data$PEOPLE_HOUSE == "Five" ~ 5,
+  data$PEOPLE_HOUSE == "Six" ~ 6,
+  data$PEOPLE_HOUSE == "Seven" ~ 7,
+  data$PEOPLE_HOUSE == "Eight" ~ 8,
+  data$PEOPLE_HOUSE == "Nueve" ~ 9,  # Spanish for "Nine"
+  data$PEOPLE_HOUSE == "Ten" ~ 10,
+  data$PEOPLE_HOUSE == "Once" ~ 11,  # Spanish for "Eleven"
+  data$PEOPLE_HOUSE == "Twelve or more" ~ 12,
+  data$PEOPLE_HOUSE == "0" ~ 0,       # Handling entry with "0"
+  TRUE ~ NA_real_  # Assign NA to any unexpected values
+)
+
+# Ensure PEOPLE_HOUSE is numeric
+data$PEOPLE_HOUSE <- as.numeric(data$PEOPLE_HOUSE)
+
+```
+
+```{r}
+data <- data %>%
+  mutate(STRATUM = as.factor(as.numeric(gsub("Stratum ", "", STRATUM))))
+```
+
+```{r}
+data <- data %>%
+  mutate(OVERALL_SCORE = QR_PRO + CR_PRO + CC_PRO + ENG_PRO + WC_PRO)
+```
+
+```{r}
+data$COMPUTER <- ifelse(data$COMPUTER == "Yes", 1, 0)
+data$CAR <- ifelse(data$CAR == "Yes", 1, 0)
+data$MOBILE <- ifelse(data$MOBILE == "Yes", 1, 0)
+
+```
+
+```{r}
+df <- data %>%
+  dplyr::select(GENDER, EDU_FATHER, EDU_MOTHER, OCC_FATHER, OCC_MOTHER, STRATUM, PEOPLE_HOUSE, COMPUTER, CAR, MOBILE, UNIVERSITY, OVERALL_SCORE)
+
+```
+
+
+```{r}
+sum(is.na(df))
+write.csv(df, "data.csv")
+```
+
+
+# Residual vs Fitted
+
+```{r}
+model <- lm(OVERALL_SCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + 
+            STRATUM + PEOPLE_HOUSE + COMPUTER + MOBILE + CAR + UNIVERSITY + OCC_FATHER + OCC_MOTHER, data =df)
+```
+
+
+```{r}
+y_value <- resid(model)
+x_value <- fitted(model)
+
+plot(x = x_value, y = y_value, main="Residual vs Fitted", xlab="Fitted",
+     ylab="Residuals")
+```
+
+```{r}
+plot(model, which = 3)
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(resid(model))
+qqline(resid(model))
+
+hist(df$OVERALL_SCORE, xlab="Overall Score", main="Histogram of Score")
+```
+
+## Log Transformation
+```{r}
+df$log_OVERALL_SCORE <- log(df$OVERALL_SCORE)
+
+model_log <- lm(log_OVERALL_SCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + 
+            STRATUM + PEOPLE_HOUSE + COMPUTER + MOBILE + CAR + UNIVERSITY + OCC_FATHER + OCC_MOTHER, data = df)
+
+# Generate the QQ plot
+qqnorm(resid(model_log), main = "QQ Plot of Residuals (Log Transformed)")
+qqline(resid(model_log))
+
+hist(df$log_OVERALL_SCORE, xlab = "Log(Overall Score)", main = "Histogram of Log(Overall Score)", 
+     col = "lightblue", border = "black", breaks = 30)
+
+
+y_value <- resid(model_log)
+x_value <- fitted(model_log)
+
+plot(x = x_value, y = y_value, main="Residual vs Fitted", xlab="Fitted",
+     ylab="Residuals")
+
+```
+
+
+
+
+## BoxCox Transformation
+
+```{r}
+ model_cox <- lm(OVERALL_SCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + 
+            STRATUM + PEOPLE_HOUSE + COMPUTER + MOBILE + CAR + UNIVERSITY + OCC_FATHER + OCC_MOTHER, data =data)
+
+ boxcox_result <- boxcox(model_cox, lambda = seq(-2, 2, by = 0.1))
+
+ best_lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+ print(best_lambda)
+
+ df$transformed_SCORE <- (data$log_OVERALL_SCORE^best_lambda - 1) / best_lambda
+
+ model_boxcox <- lm(transformed_SCORE ~ GENDER + EDU_FATHER + EDU_MOTHER +
+             STRATUM + PEOPLE_HOUSE + COMPUTER + CAR + MOBILE + UNIVERSITY + OCC_FATHER + OCC_MOTHER, data =data)
+```
+```{r}
+plot(fitted(model_boxcox), resid(model_boxcox), 
+     main="Residuals vs Fitted (Box-Cox Transformed)", 
+     xlab="Fitted", ylab="Residuals")
+
+qqnorm(resid(model_boxcox), main="QQ Plot of Residuals (Box-Cox Transformed)")
+qqline(resid(model_boxcox))
+```
+
+
+
+
+
+## BoxCox Transformation with log Transformation
+```{r}
+ model_cox <- lm(log_OVERALL_SCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + 
+            STRATUM + PEOPLE_HOUSE + COMPUTER + MOBILE + CAR + UNIVERSITY + OCC_FATHER + OCC_MOTHER, data =data)
+
+ boxcox_result <- boxcox(model_cox, lambda = seq(-2, 2, by = 0.1))
+
+ best_lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+ print(best_lambda)
+
+ df$transformed_SCORE <- (data$log_OVERALL_SCORE^best_lambda - 1) / best_lambda
+
+ model_boxcox <- lm(transformed_SCORE ~ GENDER + EDU_FATHER + EDU_MOTHER +
+             STRATUM + PEOPLE_HOUSE + COMPUTER + CAR + MOBILE + UNIVERSITY + OCC_FATHER + OCC_MOTHER, data =data)
+```
+
+
+```{r}
+plot(fitted(model_log), resid(model_log), 
+     main="Residuals vs Fitted (Log Transformed)", 
+     xlab="Fitted", ylab="Residuals")
+
+qqnorm(resid(model_log), main="QQ Plot of Residuals (Log Transformed)")
+qqline(resid(model_log))
+```
+## Square root Transformation
+
+```{r}
+data$sqrt_OVERALL_SCORE <- sqrt(data$OVERALL_SCORE)
+
+# Fit the model with the square root transformed response variable
+model_sqrt <- lm(sqrt_OVERALL_SCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + 
+            STRATUM + PEOPLE_HOUSE + COMPUTER + MOBILE + CAR + UNIVERSITY + OCC_FATHER + OCC_MOTHER, data = data)
+
+plot(fitted(model_sqrt), resid(model_sqrt), 
+     main="Residuals vs Fitted (Sqrt Transformed)", 
+     xlab="Fitted", ylab="Residuals")
+
+
+qqnorm(resid(model_sqrt), main="QQ Plot of Residuals (Sqrt Transformed)")
+qqline(resid(model_sqrt))
+
+
+hist(data$sqrt_OVERALL_SCORE, xlab = "Sqrt(Overall Score)", main = "Histogram of Sqrt(Overall Score)", 
+     col = "lightgreen", border = "black", breaks = 30)
+
+```
+
+```{r}
+plot(model, which = 3)
+```
+
+
+
+```{r}
+head(df)
+str(df)
+summary(df)
+```
+
+```{r}
+# Install
+install.packages("ggplot2")
+```
+```{r}
+library("ggplot2")
+```
+
+
+## Bar plot for Stratum (economic and social status): 
+```{r}
+# Bar plot for Stratum
+ggplot(df, aes(x = factor(STRATUM))) +
+  geom_bar(fill = "red", color = "black") +
+  ggtitle("Distribution of Stratum") +
+  xlab("Stratum (1: Low Income, 6: High Income)") +
+  ylab("Count")
+
+
+```
+
+## Overall Score by Stratum (economic and social status)
+```{r}
+# Boxplot for Overall Score by Stratum
+ggplot(df, aes(x = factor(STRATUM), y = OVERALL_SCORE)) +
+  geom_boxplot(fill = "orange", color = "black") +
+  ggtitle("Overall Score by Stratum") +
+  xlab("Stratum") +
+  ylab("Overall Score")
+
+```
+
+
+## Overall Score distribution by Gender
+```{r}
+# Facet grid for Overall Score distribution by Gender
+ggplot(df, aes(x = OVERALL_SCORE)) +
+  geom_histogram(binwidth = 10, fill = "purple", color = "black") +
+  ggtitle("Overall Score by Gender") +
+  facet_grid(~ GENDER) +
+  xlab("Overall Score") +
+  ylab("Count")
+
+```
+
+
+## Father's Education vs Father's Occupation
+```{r}
+clean_data <- data[!is.na(data$EDU_FATHER) & !is.na(data$OCC_FATHER), ]
+
+ggplot(clean_data, aes(x = OCC_FATHER, fill = EDU_FATHER)) +
+  geom_bar(position = "dodge") +  
+  labs(title = "Father's Education vs Father's Occupation",
+       x = "Father's Occupation",
+       y = "Count",
+       fill = "Father's Education") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+
+## Mother's Education vs Mother's Occupation
+```{r}
+clean_data <- data[!is.na(data$EDU_MOTHER) & !is.na(data$OCC_MOTHER), ]
+
+ggplot(clean_data, aes(x = OCC_MOTHER, fill = EDU_MOTHER)) +
+  geom_bar(position = "dodge") + 
+  labs(title = "Mother's Education vs Mother's Occupation",
+       x = "Mother's Occupation",
+       y = "Count",
+       fill = "Mother's Education") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+
+## Overall Score by Father's Occupation
+```{r}
+clean_data <- df[!is.na(df$EDU_FATHER) & !is.na(df$OCC_FATHER) & 
+                   !is.na(df$EDU_MOTHER) & !is.na(df$OCC_MOTHER) & 
+                   !is.na(df$OVERALL_SCORE), ]
+
+ggplot(clean_data, aes(x = OCC_FATHER, y = OVERALL_SCORE)) +
+  geom_boxplot() +
+  labs(title = "Overall Score by Father's Occupation",
+       x = "Father's Occupation",
+       y = "Overall Score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))  # Rotate x-axis labels for readability
+
+
+
+```
+
+
+## Overall Score by Mother's Occupation
+```{r}
+
+ggplot(clean_data, aes(x = OCC_MOTHER, y = OVERALL_SCORE)) +
+  geom_boxplot() +
+  labs(title = "Overall Score by Mother's Occupation",
+       x = "Mother's Occupation",
+       y = "Overall Score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))  # Rotate x-axis labels for readability
+
+
+```
+
+
+## Overall Score by Mother's Education
+```{r}
+
+ggplot(clean_data, aes(x = EDU_MOTHER, y = OVERALL_SCORE)) +
+  geom_boxplot() +
+  labs(title = "Overall Score by Mother's Education",
+       x = "Mother's Education",
+       y = "Overall Score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))  # Rotate x-axis labels for readability
+
+```
+
+
+
+## Overall Score by Father's Education
+```{r}
+
+ggplot(clean_data, aes(x = EDU_FATHER, y = OVERALL_SCORE)) +
+  geom_boxplot() +
+  labs(title = "Overall Score by Father's Education",
+       x = "Father's Education",
+       y = "Overall Score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))  # Rotate x-axis labels for readability
+
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+
+ggplot(df, aes(x = factor(COMPUTER))) + 
+  geom_bar(fill = "lightblue", color = "black") +
+  ggtitle("Distribution of Computer Access") +
+  xlab("Computer Access (0 = No, 1 = Yes)") +
+  ylab("Count")
+
+ggplot(df, aes(x = factor(CAR))) + 
+  geom_bar(fill = "lightgreen", color = "black") +
+  ggtitle("Distribution of Car Ownership") +
+  xlab("Car Ownership (0 = No, 1 = Yes)") +
+  ylab("Count")
+
+ggplot(df, aes(x = factor(MOBILE))) + 
+  geom_bar(fill = "lightpink", color = "black") +
+  ggtitle("Distribution of Mobile Phone Ownership") +
+  xlab("Mobile Phone Ownership (0 = No, 1 = Yes)") +
+  ylab("Count")
+
+ggplot(df, aes(x = factor(UNIVERSITY))) + 
+  geom_bar(fill = "lightcoral", color = "black") +
+  ggtitle("Distribution by University") +
+  xlab("University") +
+  ylab("Count")
+```
+
+```{r}
+# Bar plot for STRATUM and EDU_MOTHER
+ggplot(df, aes(x = factor(STRATUM), fill = EDU_MOTHER)) +
+  geom_bar(position = "dodge") +
+  ggtitle("Stratum vs Mother's Education") +
+  xlab("Stratum") +
+  ylab("Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Bar plot for STRATUM and EDU_FATHER
+ggplot(df, aes(x = factor(STRATUM), fill = EDU_FATHER)) +
+  geom_bar(position = "dodge") +
+  ggtitle("Stratum vs Father's Education") +
+  xlab("Stratum") +
+  ylab("Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+
+# Box plot for OVERALL_SCORE vs COMPUTER
+ggplot(df, aes(x = factor(COMPUTER), y = OVERALL_SCORE)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  ggtitle("Overall Score by Computer Access") +
+  xlab("Computer Access (0 = No, 1 = Yes)") +
+  ylab("Overall Score")
+
+
+
+# Box plot for OVERALL_SCORE vs CAR
+ggplot(df, aes(x = factor(CAR), y = OVERALL_SCORE)) +
+  geom_boxplot(fill = "lightgreen", color = "black") +
+  ggtitle("Overall Score by Car Ownership") +
+  xlab("Car Ownership (0 = No, 1 = Yes)") +
+  ylab("Overall Score")
+
+
+
+# Box plot for OVERALL_SCORE vs MOBILE
+ggplot(df, aes(x = factor(MOBILE), y = OVERALL_SCORE)) +
+  geom_boxplot(fill = "lightpink", color = "black") +
+  ggtitle("Overall Score by Mobile Phone Ownership") +
+  xlab("Mobile Phone Ownership (0 = No, 1 = Yes)") +
+  ylab("Overall Score")
+
+
+
+
+# Box plot for OVERALL_SCORE vs UNIVERSITY
+ggplot(df, aes(x = factor(UNIVERSITY), y = OVERALL_SCORE)) +
+  geom_boxplot(fill = "lightcoral", color = "black") +
+  ggtitle("Overall Score by University") +
+  xlab("University") +
+  ylab("Overall Score")
+
+
+```
+
+
+```{r}
+
+
+t_test_computer <- t.test(OVERALL_SCORE ~ COMPUTER, data = df)
+print(t_test_computer$p.value)
+
+t_test_car <- t.test(OVERALL_SCORE ~ CAR, data = df)
+print(t_test_car$p.value)
+
+t_test_mobile <- t.test(OVERALL_SCORE ~ MOBILE, data = df)
+print(t_test_mobile$p.value)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

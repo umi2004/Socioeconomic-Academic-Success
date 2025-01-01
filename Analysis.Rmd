@@ -1,0 +1,1063 @@
+---
+title: "Data Cleaning and EDA"
+author: "Umi Yamaguchi, Benjamin Rodovinski"
+output: pdf_document
+---
+
+```{r}
+# Load the dataset
+data <- read.csv("data.csv", header=T)
+
+# head(data)
+# str(data)
+# summary(data)
+
+```
+
+
+```{r}
+# Install
+install.packages("ggplot2")
+```
+```{r}
+library("ggplot2")
+library(dplyr)
+```
+
+
+# Encode Categorical Variables
+
+1. Education of Father and Mother
+```{r}
+ggplot(data, aes(x = EDU_FATHER)) +
+  geom_bar() +
+  labs(title = "Education Level of Father", x = "Education Level", y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ggplot(data, aes(x = EDU_MOTHER)) +
+  geom_bar() +
+  labs(title = "Education Level of Mother", x = "Education Level", y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+Clean up the education levels. 
+
+We will keep the Complete and Incomplete Educations data for analyzing difference between Complete and Incomplete going to affect on Grading Mark
+```{r}
+# Assuming 'EDU_Father' contains the education levels
+data$EDU_FATHER <- dplyr::case_when(
+  data$EDU_FATHER == "0" ~ "Unknown",
+  data$EDU_FATHER == "Complete primary " ~ "Complete Primary Education",
+  data$EDU_FATHER == "Incomplete primary " ~ "Incomplete Primary Education",
+  data$EDU_FATHER == "Complete Secundary" ~ "Complete Secondary Education",
+  data$EDU_FATHER == "Incomplete Secundary" ~ "Incomplete Secondary Education",
+  data$EDU_FATHER == "Complete technique or technology" ~ "Complete Technical Education",
+  data$EDU_FATHER == "Incomplete technical or technological" ~ "Incomplete Technical Education",
+  data$EDU_FATHER == "Complete professional education" ~ "Complete Professional Education",
+  data$EDU_FATHER == "Incomplete Professional Education" ~ "Incomplete Professional Education",
+  data$EDU_FATHER == "Not sure" ~ "Unknown",
+  data$EDU_FATHER == "Postgraduate education" ~ "Postgraduate Education"
+)
+
+# Assuming 'EDU_Father' contains the education levels
+data$EDU_MOTHER <- dplyr::case_when(
+  data$EDU_MOTHER == "0" ~ "Unknown",
+  data$EDU_MOTHER == "Complete primary " ~ "Complete Primary Education",
+  data$EDU_MOTHER == "Incomplete primary " ~ "Incomplete Primary Education",
+  data$EDU_MOTHER == "Complete Secundary" ~ "Complete Secondary Education",
+  data$EDU_MOTHER == "Incomplete Secundary" ~ "Incomplete Secondary Education",
+  data$EDU_MOTHER == "Complete technique or technology" ~ "Complete Technical Education",
+  data$EDU_MOTHER == "Incomplete technical or technological" ~ "Incomplete Technical Education",
+  data$EDU_MOTHER == "Complete professional education" ~ "Complete Professional Education",
+  data$EDU_MOTHER == "Incomplete Professional Education" ~ "Incomplete Professional Education",
+  data$EDU_MOTHER == "Not sure" ~ "Unknown",
+  data$EDU_MOTHER == "Postgraduate education" ~ "Postgraduate Education"
+)
+```
+
+
+2. Occupation of Father and Mother
+
+We will keep this as is 
+```{r}
+ggplot(data, aes(x = OCC_FATHER)) +
+  geom_bar() +
+  labs(title = "Occupation of Father", x = "Occupation", y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ggplot(data, aes(x = OCC_MOTHER)) +
+  geom_bar() +
+  labs(title = "Occupation of Mother", x = "Occupation", y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+2. University as Tier list
+```{r}
+#unique(data$UNIVERSITY)
+```
+Using University Ranking System to identify correlation between University level and Overall Score
+```{r}
+data <- data %>%
+  mutate(UNIVERSITY = case_when(
+    UNIVERSITY == "UNIVERSIDAD DE SANTANDER - UDES-BUCARAMANGA"  ~ 4,
+    UNIVERSITY == "UNIVERSIDAD DE LOS ANDES-BOGOTÁ D.C." ~ 5,
+    UNIVERSITY == "UNIVERSIDAD NACIONAL ABIERTA Y A DISTANCIA UNAD-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "UNIVERSIDAD CATOLICA DE PEREIRA-PEREIRA" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD INDUSTRIAL DE SANTANDER-BUCARAMANGA" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD TECNOLOGICA DE PEREIRA - ITP-PEREIRA" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD ANTONIO NARIÑO-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD COOPERATIVA DE COLOMBIA-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "UNIVERSIDAD DEL NORTE-BARRANQUILLA" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD EAFIT--MEDELLIN" ~ 4,
+    UNIVERSITY == "POLITECNICO GRANCOLOMBIANO-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "INSTITUCION UNIVERSITARIA CENTRO DE ESTUDIOS SUPERIORES MARIA GORETTI-PASTO" ~ 1,
+    UNIVERSITY == "UNIVERSIDAD DE NARIÑO-PASTO" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA AUTONOMA DE NARIÑO -AUNAR-PASTO" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD NACIONAL DE COLOMBIA-MANIZALES" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD MARIANA-PASTO" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD AUTONOMA DE OCCIDENTE-CALI" ~ 2,
+    UNIVERSITY == "PONTIFICIA UNIVERSIDAD JAVERIANA-CALI" ~ 5,
+    UNIVERSITY == "UNIVERSIDAD DEL VALLE-CALI" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD NACIONAL DE COLOMBIA-BOGOTÁ D.C." ~ 5,
+    UNIVERSITY == "UNIVERSIDAD DE SAN BUENAVENTURA-CALI" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD ICESI-CALI" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD DE IBAGUE-IBAGUE" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD SANTIAGO DE CALI-CALI" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD AUTONOMA DEL CARIBE-BARRANQUILLA" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSIDAD DE LA COSTA, CUC-BARRANQUILLA" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD DEL ATLANTICO-BARRANQUILLA" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD MILITAR\"NUEVA GRANADA\"-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA MINUTO DE DIOS -UNIMINUTO-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "FUNDACION UNIVERSIDAD DE AMERICA-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD SERGIO ARBOLEDA-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "PONTIFICIA UNIVERSIDAD JAVERIANA-BOGOTÁ D.C." ~ 4,
+    UNIVERSITY == "UNIVERSIDAD CATOLICA DE COLOMBIA-BOGOTÁ D.C." ~ 4,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA LOS LIBERTADORES-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "CORPORACION TECNOLOGICA INDUSTRIAL COLOMBIANA - TEINCO-BOGOTÁ D.C." ~ 1,
+    UNIVERSITY == "UNIVERSITARIA AGUSTINIANA- UNIAGUSTINIANA-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DEL CAUCA-POPAYAN" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD DE ANTIOQUIA-MEDELLIN" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD DE LA SABANA-CHIA" ~ 4,
+    UNIVERSITY == "ESCUELA COLOMBIANA DE INGENIERIA\"JULIO GARAVITO\"-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD SANTO TOMAS-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA INTERNACIONAL DEL TROPICO AMERICANO-YOPAL" ~ 2,
+    UNIVERSITY == "FUNDACION UNIVERSIDAD DE BOGOTA\"JORGE TADEO LOZANO\"-BOGOTÁ D.C." ~ 4,
+    UNIVERSITY == "UNIVERSIDAD SANTO TOMAS-TUNJA" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD LIBRE-PEREIRA" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD PONTIFICIA BOLIVARIANA-BUCARAMANGA" ~ 4,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA DE INVESTIGACION Y DESARROLLO -\"UDI\"-BUCARAMANGA" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD MANUELA BELTRAN-UMB--BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD AUTONOMA DE BUCARAMANGA-UNAB-BUCARAMANGA" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD LIBRE-BARRANQUILLA" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD SANTO TOMAS-BUCARAMANGA" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD MANUELA BELTRAN-UMB--BUCARAMANGA" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DE BOYACA - UNIBOYACA-TUNJA" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD PEDAGOGICA Y TECNOLOGICA DE COLOMBIA-TUNJA" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD DE PAMPLONA-PAMPLONA" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD DISTRITAL\"FRANCISCO JOSE DE CALDAS\"-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA DE SAN GIL - UNISANGIL -SAN GIL" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD EL BOSQUE-BOGOTÁ D.C." ~ 4,
+    UNIVERSITY == "UNIDADES TECNOLOGICAS DE SANTANDER-BUCARAMANGA" ~ 4,
+    UNIVERSITY == "CORPORACION UNIFICADA NACIONAL DE EDUCACION SUPERIOR-CUN-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA DEL CARIBE - CECAR-SINCELEJO" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD DEL SINÚ 'Elías Bechara Zainúm' - UNISINÚ-MONTERIA" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DE SUCRE-SINCELEJO" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD NACIONAL DE COLOMBIA-MEDELLIN" ~ 5,
+    UNIVERSITY == "UNIVERSIDAD DEL MAGDALENA - UNIMAGDALENA-SANTA MARTA" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD SIMON BOLIVAR-BARRANQUILLA" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA ANTONIO JOSE DE SUCRE - CORPOSUCRE-SINCELEJO" ~ 1,
+    UNIVERSITY == "UNIVERSIDAD DE CORDOBA-MONTERIA" ~ 4,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA TECNOLOGICO COMFENALCO - CARTAGENA      -CARTAGENA" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DE LA GUAJIRA-RIOHACHA" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD AUTONOMA LATINOAMERICANA-UNAULA-MEDELLIN" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD TECNOLOGICA DE BOLIVAR-CARTAGENA" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD AUTONOMA DE MANIZALES-MANIZALES" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSIDAD PILOTO DE COLOMBIA-GIRARDOT" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DEL QUINDIO-ARMENIA" ~ 3,
+    UNIVERSITY == "ESCUELA DE ADMINISTRACION Y MERCADOTECNIA DEL QUINDIO-ARMENIA" ~ 1,
+    UNIVERSITY == "UNIVERSIDAD LA GRAN COLOMBIA-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD CENTRAL-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA AGRARIA DE COLOMBIA -UNIAGRARIA-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD ECCI-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD PEDAGOGICA Y TECNOLOGICA DE COLOMBIA-SOGAMOSO" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD TECNOLOGICA DEL CHOCO\"DIEGO LUIS CORDOBA\"-QUIBDO" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DE MEDELLIN-MEDELLIN" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD COOPERATIVA DE COLOMBIA-MEDELLIN" ~ 3,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA DEL HUILA-CORHUILA-NEIVA" ~ 1,
+    UNIVERSITY == "UNIVERSIDAD SURCOLOMBIANA-NEIVA" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA AUTONOMA DEL CAUCA-POPAYAN" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD PONTIFICIA BOLIVARIANA-MEDELLIN" ~ 4,
+    UNIVERSITY == "UNIVERSIDAD FRANCISCO DE PAULA SANTANDER-CUCUTA" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD POPULAR DEL CESAR-VALLEDUPAR" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA REPUBLICANA-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA COLOMBO INTERNACIONAL - UNICOLOMBO-CARTAGENA" ~ 1,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA AMERICANA-BARRANQUILLA" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA DEL META-VILLAVICENCIO" ~ 1,
+    UNIVERSITY == "UNIVERSIDAD DE LOS LLANOS-VILLAVICENCIO" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DE LA SALLE-BOGOTÁ D.C." ~ 4,
+    UNIVERSITY == "UNIVERSIDAD INCCA DE COLOMBIA-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "INSTITUCION UNIVERSITARIA ITSA-SOLEDAD" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD EIA-MEDELLIN" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DE SAN BUENAVENTURA-MEDELLIN" ~ 2,
+    UNIVERSITY == "POLITECNICO COLOMBIANO\"JAIME ISAZA CADAVID\"-MEDELLIN" ~ 2,
+    UNIVERSITY == "INSTITUCION  UNIVERSITARIA PASCUAL BRAVO-MEDELLIN" ~ 2,
+    UNIVERSITY == "COLEGIO MAYOR DE ANTIOQUIA-MEDELLIN" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD PONTIFICIA BOLIVARIANA-MONTERIA" ~ 4,
+    UNIVERSITY == "INSTITUTO TECNOLOGICO METROPOLITANO-MEDELLIN" ~ 4,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA LASALLISTA-CALDAS" ~ 2,
+    UNIVERSITY == "INSTITUCION UNIVERSITARIA DE ENVIGADO-ENVIGADO" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA  UNITEC-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD LIBRE-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "INSTITUTO TOLIMENSE DE FORMACION TECNICA PROFESIONAL -ESPINAL" ~ 1,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA DE POPAYAN-POPAYAN" ~ 2,
+    UNIVERSITY == "UNIVERSIDAD LIBRE-CALI" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD LIBRE-CUCUTA" ~ 3,
+    UNIVERSITY == "UNIVERSIDAD FRANCISCO DE PAULA SANTANDER-OCAÑA" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA EMPRESARIAL ALEXANDER VON HUMBOLDT - C.U.E.-ARMENIA" ~ 2,
+    UNIVERSITY == "INSTITUCION UNIVERSITARIA ANTONIO JOSE CAMACHO - UNIAJC-CALI" ~ 2,
+    UNIVERSITY == "UNIDAD CENTRAL DEL VALLE DEL CAUCA-TULUA" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSIDAD PILOTO DE COLOMBIA-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA AUTONOMA DE COLOMBIA -FUAC--BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA KONRAD LORENZ-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "UNIVERSIDAD DE CARTAGENA-CARTAGENA" ~ 4,
+    UNIVERSITY == "CORPORACION POLITECNICO DE LA COSTA ATLANTICA-BARRANQUILLA" ~ 1,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA CAFAM-BOGOTÁ D.C." ~ 3,
+    UNIVERSITY == "INSTITUCION UNIVERSITARIA DE COLOMBIA - UNIVERSITARIA DE COLOMBIA-BOGOTÁ D.C." ~ 5,
+    UNIVERSITY == "UNIVERSIDAD EAN-BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DE CUNDINAMARCA-UDEC-FUSAGASUGA" ~ 2,
+    UNIVERSITY == "ESCUELA MILITAR DE AVIACION\"MARCO FIDEL SUAREZ\"-CALI" ~ 1,
+    UNIVERSITY == "ESCUELA TECNOLOGICA INSTITUTO TECNICO CENTRAL -BOGOTÁ D.C." ~ 2,
+    UNIVERSITY == "UNIVERSIDAD DEL SINÚ 'Elías Bechara Zainúm' - UNISINÚ-CARTAGENA" ~ 2,
+    UNIVERSITY == "CORPORACION UNIVERSITARIA COMFACAUCA - UNICOMFACAUCA-POPAYAN" ~ 2,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA EMPRESARIAL DE LA CAMARA DE COMERCIO DE Bogotá -BOGOTÁ D.C." ~ 1,
+    UNIVERSITY == "ESCUELA DE INGENIEROS MILITARES-BOGOTÁ D.C." ~ 1,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA CLARETIANA - UNICLARETIANA-QUIBDO" ~ 2,
+    UNIVERSITY == "FUNDACION UNIVERSITARIA NAVARRA - UNINAVARRA-NEIVA" ~ 1,
+    TRUE ~ 0  # Assign NA to any university not listed
+  ))
+
+```
+
+```{r}
+data$UNIVERSITY <- as.factor(data$UNIVERSITY)
+data$STRATUM <- as.factor(data$STRATUM)
+data$PEOPLE_HOUSE <- as.factor(data$PEOPLE_HOUSE)
+```
+
+
+```{r}
+model1 <- lm(OVERALL_SCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + OCC_FATHER + OCC_MOTHER + STRATUM + PEOPLE_HOUSE + COMPUTER + CAR + MOBILE + UNIVERSITY, data = data)
+#summary(model1)
+```
+
+
+```{r}
+
+library(car)
+boxCox(model1)
+
+p1 <- powerTransform(model1)
+summary(p1)
+```
+
+In the graph of Response variable "Overall_Score" has a left skew so by using powerTransform and boxCox function, we found that the optimal lambda is 1.46. We will round it to 1.5 for simplicity. 
+```{r}
+powerSCORE <- data$OVERALL_SCORE^1.5
+
+model1 <- lm(powerSCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + OCC_FATHER + OCC_MOTHER + STRATUM + PEOPLE_HOUSE + COMPUTER + CAR + MOBILE + UNIVERSITY, data = data)
+# summary(model1)
+# hist(powerSCORE)
+# residuals <- residuals(model1)
+# qqnorm(residuals, main = "Q-Q Plot of Residuals")
+# qqline(residuals, col = "red", lwd = 2)
+
+# y_value <- resid(model1)
+# x_value <- fitted(model1)
+
+# ggplot(data, aes(x = x_value, y = y_value)) +
+#   geom_point(alpha = 0.5) +                     # Scatter plot of residuals
+#   geom_smooth(method = "loess", color = "blue") + # LOESS smooth line to see trend
+#   geom_hline(yintercept = 0, color = "red", linetype = "dashed") + # Line at zero
+#   labs(title = "Residuals vs. Fitted",
+#        x = "Fitted Values",
+#        y = "Residuals")
+```
+
+
+
+
+
+Based on above histogram, we can see a clean normal distribution and less tails for Q-Q plot. 
+
+```{r}
+residuals <- residuals(model1)
+
+# Extract the data used in the model (this excludes observations with missing values)
+model_data <- model1$model
+
+# Add residuals to the model data
+model_data$residuals <- residuals
+
+# Identify the response variable (first column in model data)
+response_var <- names(model_data)[1]
+
+# Get the list of predictors from the model data
+predictors <- setdiff(names(model_data), c(response_var, "residuals"))
+
+# Set up the plotting area
+#par(mfrow = c(3, 4), mar = c(4, 4, 2, 1))  # Adjust rows and columns as needed
+
+# Loop over each predictor and create a residual plot
+for (pred in predictors) {
+  predictor_data <- model_data[[pred]]
+  
+  # Check if predictor is categorical or numerical
+  if (is.factor(predictor_data) || is.character(predictor_data)) {
+    # Create a boxplot for categorical predictors
+    boxplot(residuals ~ predictor_data,
+            data = model_data,
+            xlab = pred,
+            ylab = "Residuals",
+            main = paste("Residuals vs", pred),
+            col = "lightblue")
+    abline(h = 0, col = "red", lty = 2)
+  } else {
+    # Create a scatter plot for numerical predictors
+    plot(predictor_data, model_data$residuals,
+         xlab = pred,
+         ylab = "Residuals",
+         main = paste("Residuals vs", pred),
+         pch = 20,
+         col = "blue")
+    abline(h = 0, col = "red", lty = 2)
+  }
+}
+```
+
+# Conduct ANOVA Test
+```{r}
+
+f_test <- qf(0.95, 67, 12343)
+
+
+```
+By Conducting ANOVA Test, We test with 95% F-statistics with 67 and 12343 DFs. We found that f_test is 1.30, therefore 63.66 > 1.30. We rejct null and conclude significant linear relationship exists for at least one predictor. 
+
+# Analyze T-tests
+                                                   Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                                         4098.833    699.631   5.859 4.79e-09 ***
+GENDER                                               144.373     39.978   3.611 0.000306 ***
+EDU_FATHERComplete Professional Education            148.354    103.467   1.434 0.151646    
+EDU_FATHERComplete Secondary Education                 9.219     92.477   0.100 0.920596    
+EDU_FATHERComplete Technical Education               265.841    110.336   2.409 0.015995 *  
+EDU_FATHERIncomplete Primary Education                 4.443    114.941   0.039 0.969167    
+EDU_FATHERIncomplete Professional Education          431.772    139.023   3.106 0.001902 ** 
+EDU_FATHERIncomplete Secondary Education             -58.386    104.140  -0.561 0.575048    
+EDU_FATHERIncomplete Technical Education             273.722    159.527   1.716 0.086217 .  
+EDU_FATHERPostgraduate Education                     553.392    123.824   4.469 7.92e-06 ***
+EDU_FATHERUnknown                                    -56.710    125.693  -0.451 0.651868    
+EDU_MOTHERComplete Professional Education            347.647    110.163   3.156 0.001605 ** 
+EDU_MOTHERComplete Secondary Education                20.454     97.686   0.209 0.834147    
+EDU_MOTHERComplete Technical Education               194.642    111.768   1.741 0.081624 .  
+EDU_MOTHERIncomplete Primary Education              -114.569    129.518  -0.885 0.376400    
+EDU_MOTHERIncomplete Professional Education          356.371    138.219   2.578 0.009940 ** 
+EDU_MOTHERIncomplete Secondary Education             -76.486    109.513  -0.698 0.484928    
+EDU_MOTHERIncomplete Technical Education             167.576    153.004   1.095 0.273431    
+EDU_MOTHERPostgraduate Education                     615.088    131.133   4.691 2.75e-06 ***
+EDU_MOTHERUnknown                                   -120.955    149.191  -0.811 0.417533    
+OCC_FATHERAuxiliary or Administrative                 83.296    149.507   0.557 0.577444    
+OCC_FATHEREntrepreneur                               -65.845    140.912  -0.467 0.640308    
+OCC_FATHERExecutive                                  171.707    115.854   1.482 0.138341    
+OCC_FATHERHome                                        19.141    266.464   0.072 0.942737    
+OCC_FATHERIndependent                                110.334    107.228   1.029 0.303516    
+OCC_FATHERIndependent professional                   159.800    119.281   1.340 0.180371    
+OCC_FATHEROperator                                   135.958    115.253   1.180 0.238162    
+OCC_FATHEROther occupation                           225.674    118.393   1.906 0.056654 .  
+OCC_FATHERRetired                                    323.250    134.939   2.396 0.016611 *  
+OCC_FATHERSmall entrepreneur                         -66.323    130.454  -0.508 0.611182    
+OCC_FATHERTechnical or professional level employee    96.850    110.189   0.879 0.379448    
+OCC_MOTHERAuxiliary or Administrative                 32.721    180.202   0.182 0.855916    
+OCC_MOTHEREntrepreneur                              -198.946    220.379  -0.903 0.366678    
+OCC_MOTHERExecutive                                 -143.428    182.542  -0.786 0.432041    
+OCC_MOTHERHome                                        10.455    160.864   0.065 0.948180    
+OCC_MOTHERIndependent                               -128.531    174.650  -0.736 0.461784    
+OCC_MOTHERIndependent professional                   -74.995    183.304  -0.409 0.682454    
+OCC_MOTHEROperator                                    71.632    183.357   0.391 0.696049    
+OCC_MOTHEROther occupation                          -226.100    185.527  -1.219 0.222985    
+OCC_MOTHERRetired                                    337.552    238.983   1.412 0.157843    
+OCC_MOTHERSmall entrepreneur                          28.873    192.776   0.150 0.880944    
+OCC_MOTHERTechnical or professional level employee   -35.702    174.300  -0.205 0.837710    
+STRATUM1                                              77.636    760.267   0.102 0.918666    
+STRATUM2                                             458.423    759.046   0.604 0.545890    
+STRATUM3                                             706.136    758.809   0.931 0.352087    
+STRATUM4                                             993.144    760.569   1.306 0.191648    
+STRATUM5                                            1011.501    764.057   1.324 0.185576    
+STRATUM6                                            1211.438    768.141   1.577 0.114797    
+PEOPLE_HOUSE1                                       -907.447    876.598  -1.035 0.300600    
+PEOPLE_HOUSE2                                       -577.771    640.559  -0.902 0.367085    
+PEOPLE_HOUSE3                                       -827.336    636.858  -1.299 0.193937    
+PEOPLE_HOUSE4                                       -815.136    636.336  -1.281 0.200223    
+PEOPLE_HOUSE5                                       -770.964    636.882  -1.211 0.226100    
+PEOPLE_HOUSE6                                       -848.956    638.846  -1.329 0.183909    
+PEOPLE_HOUSE7                                       -869.699    646.421  -1.345 0.178519    
+PEOPLE_HOUSE8                                      -1293.297    657.895  -1.966 0.049343 *  
+PEOPLE_HOUSE9                                       -981.047    685.073  -1.432 0.152160    
+PEOPLE_HOUSE10                                      -768.875    703.353  -1.093 0.274346    
+PEOPLE_HOUSE11                                      -451.045    808.321  -0.558 0.576853    
+PEOPLE_HOUSE12                                      -891.910    744.536  -1.198 0.230963    
+COMPUTER                                              75.185     62.674   1.200 0.230304    
+CAR                                                  -75.387     47.139  -1.599 0.109793    
+MOBILE                                               362.839     49.353   7.352 2.08e-13 ***
+UNIVERSITY1                                         -484.925    353.468  -1.372 0.170118    
+UNIVERSITY2                                          475.028    334.347   1.421 0.155411    
+UNIVERSITY3                                          950.475    335.251   2.835 0.004588 ** 
+UNIVERSITY4                                         1870.271    334.741   5.587 2.36e-08 ***
+UNIVERSITY5                                         3303.381    339.151   9.740  < 2e-16 ***
+
+#Analysis
+
+Based on the summary of the model, we can see that OCC_FATHER and OCC_MOTHER were neither significance with OVERALL_SCORE. Let's compare using partial-F Test. 
+
+## OCC_FATHER and OCC_MOTHER
+```{r}
+
+model_no_OCC <- lm(powerSCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + STRATUM + PEOPLE_HOUSE + COMPUTER + CAR + MOBILE + UNIVERSITY, data = data)
+#summary(model_no_OCC)
+
+#anova(model_no_OCC, model1)
+
+```
+
+```{r}
+model1_df <- 12343
+model_no_OCC_df <- 12365
+occ_test <- qf(0.95, model_no_OCC_df - model1_df, model1_df)
+
+```
+in this test we left null hypothesis that OCC_FATHER and OCC_MOTHER = 0 and alternative hypothesis that at least one not equal to 0.
+
+By conduct partial F test, we got F = 1.721. By comparing with F-test, we found that 1.721 > 1.543. We reject the null hypothesis. Which means there's some significant linear relationship exists between OVERALL_SCORE and either OCC_FATHER and OCC_MOTHER so we will keep the full model. 
+
+## STRATUM
+```{r}
+
+model_no_STRATUM <- lm(powerSCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + OCC_FATHER + OCC_MOTHER + PEOPLE_HOUSE + COMPUTER + CAR + MOBILE + UNIVERSITY, data = data)
+#summary(model_no_STRATUM)
+
+#anova(model_no_STRATUM, model1)
+
+```
+
+```{r}
+model1_df <- 12343
+model_no_STRATUM_df <- 12349
+STRATUM_test <- qf(0.95, model_no_STRATUM_df - model1_df, model1_df)
+
+```
+in this test we left null hypothesis that STRATUM = 0 and alternative hypothesis that STRATUM is not equal to 0.
+
+By conduct partial F test, we got F = 21.153. By comparing with F-test, we found that 21.153 > 2.0993. We reject the null hypothesis. Which means there's significant linear relationship exists between OVERALL_SCORE and STRATUM so we will keep the full model. 
+
+## PEOPLE_HOUSE
+```{r}
+
+model_no_PEOPLE <- lm(powerSCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + OCC_FATHER + OCC_MOTHER + STRATUM + COMPUTER + CAR + MOBILE + UNIVERSITY, data = data)
+#summary(model_no_PEOPLE)
+
+#anova(model_no_PEOPLE, model1)
+
+```
+
+```{r}
+model1_df <- 12343
+model_no_PEOPLE_df <- 12355
+PEOPLE_test <- qf(0.95, model_no_PEOPLE_df - model1_df, model1_df)
+
+```
+in this test we left null hypothesis that PEOPLE_HOUSE = 0 and alternative hypothesis that PEOPLE_HOUSE is not equal to 0.
+
+By conduct partial F test, we got F = 1.5755. By comparing with F-test, we found that 1.5755 < 1.7529. We fail to reject the null hypothesis. Which means there's no significant linear relationship exists between PEOPLE_HOUSE so we will keep the model_no_PEOPLE.  
+
+## COMPUTER and CAR
+```{r}
+
+model_no_COM_CAR <- lm(powerSCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + OCC_FATHER + OCC_MOTHER + STRATUM + MOBILE + UNIVERSITY, data = data)
+#summary(model_no_COM_CAR)
+
+#anova(model_no_COM_CAR, model1)
+
+```
+
+```{r}
+model1_df <- 12343
+model_no_COM_CAR_df <- 12357
+COM_CAR_test <- qf(0.95, model_no_COM_CAR_df - model1_df, model1_df)
+
+```
+in this test we left null hypothesis that COMPUTER and CAR = 0 and alternative hypothesis that COMPUTER or CAR is not equal to 0.
+
+By conduct partial F test, we got F = 1.6365. By comparing with F-test, we found that 1.6365 < 1.6926 We fail to reject the null hypothesis. Which means there's no significant linear relationship exists between COMPUTER and CAR so we will keep the model_no_COM_CAR.
+
+
+## Further analysis for OCC_MOTHER
+```{r}
+
+model_no_MOTHER <- lm(powerSCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + OCC_FATHER + STRATUM + MOBILE + UNIVERSITY, data = data)
+#summary(model_no_MOTHER)
+
+#anova(model_no_MOTHER, model1)
+
+```
+
+```{r}
+model1_df <- 12343
+model_no_MOTHER_df <- 12368
+MOTHER_test <- qf(0.95, model_no_MOTHER_df - model1_df, model1_df)
+
+```
+in this test we left null hypothesis that OCC_MOTHER = 0 and alternative hypothesis that is not equal to 0.
+
+By conduct partial F test, we got F = 1.6827. By comparing with F-test, we found that 1.6827 > 1.5070. We reject the null hypothesis. Which means there's some significant linear relationship exists between OVERALL_SCORE and OCC_MOTHER so we will keep the model_no_COM_CAR.
+
+
+
+# Final Check
+```{r}
+powerSCORE <- data$OVERALL_SCORE^1.5
+
+model1 <- lm(powerSCORE ~ GENDER + EDU_FATHER + EDU_MOTHER + OCC_FATHER + OCC_MOTHER + STRATUM + MOBILE + UNIVERSITY, data = data)
+summary(model1)
+hist(powerSCORE)
+residuals <- residuals(model1)
+qqnorm(residuals, main = "Q-Q Plot of Residuals")
+qqline(residuals, col = "red", lwd = 2)
+
+y_value <- resid(model1)
+x_value <- fitted(model1)
+
+ggplot(data, aes(x = x_value, y = y_value)) +
+  geom_point(alpha = 0.5) +                     # Scatter plot of residuals
+  geom_smooth(method = "loess", color = "blue") + # LOESS smooth line to see trend
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") + # Line at zero
+  labs(title = "Residuals vs. Fitted",
+       x = "Fitted Values",
+       y = "Residuals")
+```
+
+# Verifying Multicollinearity and Goodness
+```{r}
+#cor(data[, c(1,9:11)])
+vif1 <- 1/(1 - 0.2554)
+print(vif1)
+vif(model1)
+```
+Based on the VIF, we can see that all predictors have VIF < 2 which means there's not much big concern in multicollinearity. 
+
+Let's check for the Goodness
+
+# Outliers and Leverage Observations
+```{r}
+# Calculate hat values
+hat_values <- hatvalues(model1)
+threshold_leverage <- 2 * (length(coef(model1)) / nrow(data))
+
+lev_val <- which(hat_values > threshold_leverage)
+
+```
+This shows that there's lot of leverage observation that exceeds the threshold
+
+```{r}
+# Calculate standardized residuals
+standardized_residuals <- rstandard(model1)
+
+# Identify outliers (standardized residuals > |2|)
+outliers <- which(abs(standardized_residuals) > 2)
+
+```
+There's lot of outliers. To check that if there's any influence to the significance, we going to look at cooks distance.
+
+
+
+```{r}
+di <- cooks.distance(model1)
+
+p <- 53  # Number of predictors
+n <- 12411  # Total number of observations
+
+cutoff_di <- qf(0.5, p+1, n-p-1)
+influencial_points <- which(di > cutoff_di)
+
+```
+Seems like it won't affect on the significance
+
+
+Let's move on if there's any influence on own fitted values
+```{r}
+dffits <- dffits(model1)
+cutoff_dffits <-  2/sqrt(   (length(coef(model1)) / nrow(data))   )
+which(abs(dffits) > cutoff_dffits)
+
+```
+It seems like there's no influence on own fitted values. 
+
+Let's check influential on coefficients.
+```{r}
+
+dfbetas <- dfbetas(model1)
+dim(dfbetas)
+cutoff_dfbetas <- 2/sqrt(nrow(data))
+
+dfbeta_v_val_left <- which(abs(dfbetas[,1])>cutoff_dfbetas)
+dfbeta_v_val_right <- which(abs(dfbetas[,2])>cutoff_dfbetas)
+```
+There's lot of disproportionate influence on the regression coefficient. 
+
+### By inspecting the outliers, I found that there's high leverage outliers and high residuals outliers. To avoid deleting the high leverage outliers we're going to discard that is actually affecting our data to high noise. 
+
+```{r}
+filtered_large_residuals <- setdiff(
+  outliers,
+  intersect(outliers, c(lev_val, dfbeta_v_val_left, dfbeta_v_val_right))
+)
+
+```
+
+## From what we found, let's start discarding the any leverage observation, outliers and disproportionate values.
+```{r}
+
+# filer out all the outliers, leverage obs, and disproportionate values. Then, sort it out.     outliers, lev_vals
+drop_data <- sort(unique(rbind(filtered_large_residuals)))
+
+new_data <- data[-c(drop_data), ]
+
+Filter_Score <- new_data$OVERALL_SCORE^1.5
+
+model2 <- lm(Filter_Score ~ GENDER + EDU_FATHER + EDU_MOTHER + OCC_FATHER + OCC_MOTHER + STRATUM + MOBILE + UNIVERSITY, data = new_data)
+
+
+```
+
+
+Verify
+```{r}
+hist(Filter_Score)
+residuals <- residuals(model2)
+qqnorm(residuals, main = "Q-Q Plot of Residuals")
+qqline(residuals, col = "red", lwd = 5)
+
+
+boxCox(model2)
+
+p1 <- powerTransform(model2)
+summary(p1)
+```
+
+
+```{r}
+y_value <- resid(model2)
+x_value <- fitted(model2)
+
+ggplot(data[-c(drop_data), ], aes(x = x_value, y = y_value)) +
+  geom_point(alpha = 0.5) +                     # Scatter plot of residuals
+  geom_smooth(method = "loess", color = "blue") + # LOESS smooth line to see trend
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") + # Line at zero
+  labs(title = "Residuals vs. Fitted",
+       x = "Fitted Values",
+       y = "Residuals")
+```
+
+
+```{r}
+summary(model2)
+```
+```{r}
+residuals <- residuals(model2)
+
+# Extract the data used in the model (this excludes observations with missing values)
+model_data <- model2$model
+
+# Add residuals to the model data
+model_data$residuals <- residuals
+
+# Identify the response variable (first column in model data)
+response_var <- names(model_data)[1]
+
+# Get the list of predictors from the model data
+predictors <- setdiff(names(model_data), c(response_var, "residuals"))
+
+# Set up the plotting area
+#par(mfrow = c(3, 4), mar = c(4, 4, 2, 1))  # Adjust rows and columns as needed
+
+# Loop over each predictor and create a residual plot
+for (pred in predictors) {
+  predictor_data <- model_data[[pred]]
+  
+  # Check if predictor is categorical or numerical
+  if (is.factor(predictor_data) || is.character(predictor_data)) {
+    # Create a boxplot for categorical predictors
+    boxplot(residuals ~ predictor_data,
+            data = model_data,
+            xlab = pred,
+            ylab = "Residuals",
+            main = paste("Residuals vs", pred),
+            col = "lightblue")
+    abline(h = 0, col = "red", lty = 2)
+  } else {
+    # Create a scatter plot for numerical predictors
+    plot(predictor_data, model_data$residuals,
+         xlab = pred,
+         ylab = "Residuals",
+         main = paste("Residuals vs", pred),
+         pch = 20,
+         col = "blue")
+    abline(h = 0, col = "red", lty = 2)
+  }
+}
+```
+
+
+## Lastly use Automated Selection for final check
+
+```{r}
+library(MASS)
+```
+```{r}
+stepAIC(lm(OVERALL_SCORE ~ ., data=new_data[,-1]), direction = "both", k=2)
+```
+We have got very similar selection that we got in model2. We will keep PEOPLE_HOUSE and OCC_MOTHER for answering research questions
+
+
+# Answering to research questions
+
+## Final Linear Regression Eqaution
+```{r}
+model_Fin <- lm(Filter_Score ~ GENDER + EDU_FATHER + EDU_MOTHER + OCC_FATHER + OCC_MOTHER + STRATUM + MOBILE + UNIVERSITY + PEOPLE_HOUSE, data = new_data)
+
+summary(model_Fin)
+
+```
+
+
+### Correlation 
+```{r}
+new_data <- new_data[, !names(new_data) %in% "X"]
+
+new_corr <- cor(new_data[, sapply(new_data, is.numeric)])
+
+new_corr
+```
+
+
+```{r}
+install.packages("ggcorrplot")
+```
+
+```{r}
+library(ggcorrplot)
+ggcorrplot(new_corr, lab = TRUE)
+
+```
+# Correlation for every categorical values
+
+### Gender
+```{r}
+lm_Gender <- lm(Filter_Score ~ GENDER, data = new_data)
+
+summary(lm_Gender)
+```
+### EDU_FATHER
+```{r}
+lm_edu_father <- lm(Filter_Score ~ EDU_FATHER, data = new_data)
+
+summary(lm_edu_father)
+```
+
+### EDU_MOTHER
+```{r}
+lm_edu_mother <- lm(Filter_Score ~ EDU_MOTHER, data = new_data)
+
+summary(lm_edu_mother)
+```
+
+### OCC_FATHER
+```{r}
+lm_occ_father <- lm(Filter_Score ~ OCC_FATHER, data = new_data)
+
+summary(lm_occ_father)
+```
+### OCC_MOTHER
+```{r}
+lm_occ_mother <- lm(Filter_Score ~ OCC_MOTHER, data = new_data)
+
+summary(lm_occ_mother)
+```
+### STRATUM
+```{r}
+lm_stratum <- lm(Filter_Score ~ STRATUM, data = new_data)
+
+summary(lm_stratum)
+```
+### MOBILE
+```{r}
+lm_mobile <- lm(Filter_Score ~ MOBILE, data = new_data)
+
+summary(lm_mobile)
+```
+
+
+### UNIVERSITY
+```{r}
+lm_university <- lm(Filter_Score ~ UNIVERSITY, data = new_data)
+
+summary(lm_university)
+```
+### PEOPLE_HOUSE
+```{r}
+lm_household <- lm(Filter_Score ~ PEOPLE_HOUSE, data = new_data)
+
+summary(lm_household)
+```
+
+
+### Graphs for each predictors
+```{r}
+# Define the outcome variable and predictors
+outcome_var <- "Filter_Score"
+predictors <- c("GENDER", "EDU_FATHER", "EDU_MOTHER", "OCC_FATHER", 
+                "OCC_MOTHER", "STRATUM", "MOBILE", "UNIVERSITY", "PEOPLE_HOUSE")
+
+
+# Loop through predictors to generate plots
+for (pred in predictors) {
+  if (is.numeric(new_data[[pred]])) {
+    # For numerical predictors, use a scatter plot with a regression line
+    p <- ggplot(new_data, aes_string(x = pred, y = outcome_var)) +
+      geom_point(alpha = 0.6) +
+      geom_smooth(method = "lm", color = "blue", se = FALSE) +
+      labs(title = paste("Scatter Plot of", pred, "vs", outcome_var),
+           x = pred, y = outcome_var) + 
+      theme_minimal()
+  } else {
+    # For categorical predictors, use a boxplot
+    p <- ggplot(new_data, aes_string(x = pred, y = outcome_var)) +
+      geom_boxplot(fill = "skyblue", alpha = 0.7) +
+      labs(title = paste("Boxplot of", outcome_var, "by", pred),
+           x = pred, y = outcome_var) +
+      theme_minimal() + theme(axis.text.x = element_text(angle = 6, vjust = 0.5, hjust=1, size = 5))
+  }
+  
+  # Add plot to the list
+  print(p)
+}
+
+
+```
+```{r}
+library(ggplot2)
+library(forcats)
+
+# Ensure EDU_FATHER is a factor
+new_data$EDU_FATHER <- as.factor(new_data$EDU_FATHER)
+
+# Reorder EDU_FATHER based on the median of Filter_Score
+ggplot(new_data, aes(x = fct_reorder(EDU_FATHER, Filter_Score, .fun = median), y = Filter_Score)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red", outlier.size = 2) +
+  stat_summary(
+    aes(group = 1), # Ensures a single trend line across all categories
+    fun = median, # Using median to define the trend
+    geom = "line",
+    color = "gold",
+    size = 2, # Makes the line thicker
+    linetype = "solid" # Ensures a bold solid line
+  ) +
+  stat_summary(
+    aes(group = 1),
+    fun = median, # Using median for consistency
+    geom = "point",
+    color = "darkorange",
+    size = 4, # Enlarges the points for emphasis
+    shape = 18 # Uses a diamond shape for distinct visibility
+  ) +
+  xlab("Father's Education Level (Ordered by Median Filter_Score)") +
+  ylab("Filter_Score") +
+  ggtitle("Boxplot of Filter_Score by Father's Education Level with Trend Line") +
+  theme(
+    axis.text.x = element_text(angle = 11, hjust = 0.67, color = "darkblue", size = 10),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    plot.title = element_text(size = 11, face = "bold", hjust = 0),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray", size = 0.5),
+    panel.grid.minor = element_blank()
+  )
+
+
+```
+
+
+```{r}
+library(forcats)
+
+# Ensure EDU_FATHER is a factor
+new_data$OCC_FATHER <- as.factor(new_data$OCC_FATHER)
+
+# Reorder EDU_FATHER based on the median of Filter_Score
+ggplot(new_data, aes(x = fct_reorder(OCC_FATHER, Filter_Score), y = Filter_Score)) +
+  geom_boxplot() +stat_summary(
+    aes(group = 1), # Ensures a single trend line across all categories
+    fun = median, # Replace with median if you want a median trend
+    geom = "line",
+    color = "red",
+    size = 1) +
+  xlab("Father's Occupation (Ordered by Median Filter_Score)") +
+  ylab("Filter_Score") +
+  ggtitle("Boxplot of Filter_Score by Father's Occupation") +
+  theme(axis.text.x = element_text(angle = 15, hjust = 1))
+
+```
+
+
+```{r}
+library(ggplot2)
+library(forcats)
+
+# Ensure STRATUM is a factor
+new_data$STRATUM <- as.factor(new_data$STRATUM)
+
+# Reorder STRATUM based on the median of Filter_Score
+ggplot(new_data, aes(x = fct_reorder(STRATUM, Filter_Score, .fun = median), y = Filter_Score)) +
+  geom_boxplot(fill = "lightgreen", color = "darkgreen", outlier.color = "red", outlier.size = 2) +
+  stat_summary(
+    aes(group = 1), # Ensures a single trend line across all categories
+    fun = median, # Using median to define the trend
+    geom = "line",
+    color = "red",
+    size = 1, # Makes the line thicker
+  ) +
+  stat_summary(
+    aes(group = 1),
+    fun = median, # Using median for consistency
+    geom = "point",
+    color = "purple",
+    size = 2, # Enlarges the points for emphasis
+    shape = 17 # Uses a triangle shape for distinct visibility
+  ) +
+  xlab("Socioeconomic Stratum (Ordered by Median Filter_Score)") +
+  ylab("Filter_Score") +
+  ggtitle("Boxplot of Filter_Score by Socioeconomic Stratum with Trend Line") +
+  theme(
+    axis.text.x = element_text(angle = 15, hjust = 1, color = "darkgreen", size = 10),
+    axis.title.x = element_text(size = 8, face = "bold"),
+    axis.title.y = element_text(size = 8, face = "bold"),
+    plot.title = element_text(size = 8, face = "bold", hjust = 0.5),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray", size = 0.5),
+    panel.grid.minor = element_blank()
+  )
+
+
+```
+
+
+```{r}
+library(ggplot2)
+library(forcats)
+
+# Ensure UNIVERSITY is a factor
+new_data$UNIVERSITY <- as.factor(new_data$UNIVERSITY)
+
+# Reorder UNIVERSITY based on the median of Filter_Score
+ggplot(new_data, aes(x = fct_reorder(UNIVERSITY, Filter_Score, .fun = median), y = Filter_Score)) +
+  geom_boxplot(fill = "lightyellow", color = "darkorange", outlier.color = "red", outlier.size = 2) +
+  stat_summary(
+    aes(group = 1), # Ensures a single trend line across all categories
+    fun = median, # Using median to define the trend
+    geom = "line",
+    color = "blue",
+    size = 1, # Makes the line thicker
+    linetype = "solid" # Bold solid line for distinct trend
+  ) +
+  stat_summary(
+    aes(group = 1),
+    fun = median, # Using median for consistency
+    geom = "point",
+    color = "darkred",
+    size = 2, # Enlarges the points for emphasis
+    shape = 16 # Uses a filled circle for emphasis
+  ) +
+  xlab("University Tier List") +
+  ylab("Filter_Score") +
+  ggtitle("Boxplot of Filter_Score by University Tier with Trend Line") +
+  theme(
+    axis.text.x = element_text(angle = 15, hjust = 1, color = "black", size = 10),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    plot.title = element_text(size = 8, face = "bold", hjust = 0.5),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray", size = 0.5),
+    panel.grid.minor = element_blank()
+  )
+
+```
+
+
+```{r}
+
+# Median Filter_Score for each category of EDU_FATHER
+median_per_category <- aggregate(Filter_Score ~ OCC_MOTHER, data = new_data, FUN = median)
+
+# View the result
+print(median_per_category)
+
+
+
+```
+
+
+
+```{r}
+library(ggplot2)
+library(forcats)
+
+# Ensure UNIVERSITY is a factor
+new_data$OCC_FATHER <- as.factor(new_data$OCC_FATHER)
+
+# Reorder UNIVERSITY based on the median of Filter_Score
+ggplot(new_data, aes(x = fct_reorder(OCC_FATHER, Filter_Score, .fun = median), y = Filter_Score)) +
+  geom_boxplot(fill = "lightyellow", color = "darkorange", outlier.color = "red", outlier.size = 2) +
+  stat_summary(
+    aes(group = 1), # Ensures a single trend line across all categories
+    fun = median, # Using median to define the trend
+    geom = "line",
+    color = "blue",
+    size = 1, # Makes the line thicker
+    linetype = "solid" # Bold solid line for distinct trend
+  ) +
+  stat_summary(
+    aes(group = 1),
+    fun = median, # Using median for consistency
+    geom = "point",
+    color = "darkred",
+    size = 2, # Enlarges the points for emphasis
+    shape = 16 # Uses a filled circle for emphasis
+  ) +
+  xlab("Occupation Father") +
+  ylab("Filter_Score") +
+  ggtitle("Boxplot of Filter_Score by Occupation Father") +
+  theme(
+    axis.text.x = element_text(angle = 15, hjust = 1, color = "black", size = 10),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    plot.title = element_text(size = 8, face = "bold", hjust = 0.5),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(color = "gray", size = 0.5),
+    panel.grid.minor = element_blank()
+  )
+
+
+
+```
+
+
+```{r}
+write.csv(new_data, "finaldata.csv")
+```
